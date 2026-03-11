@@ -1,0 +1,1444 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard Theo Loại Khớp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-soft: #f5efe4;
+      --bg-card: #fffdf7;
+      --ink: #1f2a37;
+      --muted: #576175;
+      --line: #dccfbb;
+      --teal: #0f766e;
+      --blue: #0b6e99;
+      --amber: #b45309;
+      --rose: #b84b5f;
+      --indigo: #2855a6;
+      --shadow: 0 12px 36px rgba(31, 42, 55, 0.09);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      font-family: "Plus Jakarta Sans", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 10% 12%, rgba(15, 118, 110, 0.17) 0%, rgba(15, 118, 110, 0) 34%),
+        radial-gradient(circle at 90% 15%, rgba(180, 83, 9, 0.16) 0%, rgba(180, 83, 9, 0) 31%),
+        linear-gradient(140deg, #f7f1e7 0%, #f3f7f6 54%, #fbf4ea 100%);
+    }
+
+    main {
+      width: min(1280px, calc(100% - 2rem));
+      margin: 1.4rem auto 2.2rem;
+      position: relative;
+      z-index: 2;
+    }
+
+    .header {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: linear-gradient(122deg, rgba(255, 253, 247, 0.95), rgba(255, 250, 242, 0.86));
+      box-shadow: var(--shadow);
+      padding: 1.3rem 1.45rem 1.2rem;
+      backdrop-filter: blur(3px);
+    }
+
+    .eyebrow {
+      margin: 0;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-size: 0.74rem;
+      color: var(--blue);
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 0.35rem 0 0.52rem;
+      font-family: "Fraunces", Georgia, serif;
+      font-size: clamp(1.5rem, 3.2vw, 2.2rem);
+      line-height: 1.12;
+      font-weight: 700;
+    }
+
+    .status {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.4;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.58rem;
+      margin-top: 1rem;
+      align-items: end;
+    }
+
+    button,
+    .file-label,
+    .filter-box select {
+      border: 1px solid #d9c7ad;
+      border-radius: 999px;
+      background: #fff9ef;
+      color: var(--ink);
+      font: inherit;
+      padding: 0.58rem 0.92rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      min-height: 42px;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+
+    button,
+    .file-label {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    button:hover,
+    .file-label:hover,
+    .filter-box select:hover {
+      transform: translateY(-1px);
+      border-color: #c6ac8f;
+      box-shadow: 0 8px 18px rgba(31, 42, 55, 0.1);
+    }
+
+    .filter-box {
+      display: inline-flex;
+      flex-direction: column;
+      gap: 0.26rem;
+      margin-left: auto;
+      min-width: 280px;
+      max-width: 420px;
+    }
+
+    .filter-box label {
+      font-size: 0.73rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .filter-box select {
+      min-height: 2.32rem;
+      appearance: none;
+      padding-right: 2rem;
+      background-image:
+        linear-gradient(45deg, transparent 50%, #7c6348 50%),
+        linear-gradient(135deg, #7c6348 50%, transparent 50%);
+      background-position:
+        calc(100% - 18px) calc(50% - 3px),
+        calc(100% - 12px) calc(50% - 3px);
+      background-size: 6px 6px, 6px 6px;
+      background-repeat: no-repeat;
+    }
+
+    #fileInput {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+      width: 1px;
+      height: 1px;
+    }
+
+    .kpi-grid {
+      margin-top: 1rem;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.76rem;
+    }
+
+    .kpi-card {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 0.86rem 0.95rem;
+      background: rgba(255, 254, 251, 0.95);
+      box-shadow: 0 10px 26px rgba(31, 42, 55, 0.06);
+      animation: rise 0.6s ease both;
+    }
+
+    .kpi-card h2 {
+      margin: 0;
+      font-size: 0.81rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .kpi-card p {
+      margin: 0.34rem 0 0;
+      font-size: clamp(1.25rem, 2vw, 1.66rem);
+      font-weight: 700;
+      color: var(--teal);
+    }
+
+    .charts {
+      margin-top: 1rem;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.88rem;
+    }
+
+    .chart-card {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--bg-card);
+      box-shadow: var(--shadow);
+      padding: 0.8rem 0.95rem 0.92rem;
+      min-height: 362px;
+      overflow: hidden;
+      animation: rise 0.7s ease both;
+    }
+
+    .chart-card h3 {
+      margin: 0 0 0.43rem;
+      font-size: 0.94rem;
+      color: #273246;
+      font-weight: 700;
+    }
+
+    .chart-card p {
+      margin: 0 0 0.62rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .chart-wrap {
+      height: 286px;
+      position: relative;
+    }
+
+    .heatmap-wrap {
+      height: 286px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .heatmap-scroll {
+      border: 1px solid #dfd1bd;
+      border-radius: 12px;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      background: #fffdf7;
+      flex: 1;
+    }
+
+    .heatmap-table {
+      border-collapse: separate;
+      border-spacing: 3px;
+      width: max-content;
+      min-width: 100%;
+      font-size: 0.72rem;
+    }
+
+    .heatmap-table th {
+      position: sticky;
+      top: 0;
+      background: #f7f2e8;
+      color: #3a4a63;
+      z-index: 2;
+      text-align: center;
+      padding: 0.34rem 0.42rem;
+      border-radius: 6px;
+      font-weight: 700;
+    }
+
+    .heatmap-table th.brand-col {
+      left: 0;
+      z-index: 4;
+      text-align: left;
+      min-width: 170px;
+      max-width: 220px;
+    }
+
+    .heatmap-table td {
+      text-align: center;
+      padding: 0.35rem 0.36rem;
+      border-radius: 6px;
+      min-width: 45px;
+      font-weight: 600;
+    }
+
+    .heatmap-table td.brand-col {
+      position: sticky;
+      left: 0;
+      z-index: 3;
+      background: #fff8eb;
+      color: #2f405a;
+      text-align: left;
+      max-width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 700;
+      min-width: 170px;
+    }
+
+    .heatmap-table td.total-col {
+      background: #f4ecdf;
+      color: #25344a;
+      font-weight: 700;
+    }
+
+    .heatmap-empty {
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      border: 1px dashed #d7c7ad;
+      border-radius: 12px;
+      background: #fffdf8;
+      min-height: 175px;
+      font-size: 0.88rem;
+      padding: 0.5rem;
+      text-align: center;
+    }
+
+    .heatmap-legend {
+      display: flex;
+      align-items: center;
+      gap: 0.48rem;
+      color: #5f6b7d;
+      font-size: 0.72rem;
+    }
+
+    .heatmap-legend-bar {
+      height: 10px;
+      border-radius: 999px;
+      flex: 1;
+      border: 1px solid #d7cab7;
+      background: linear-gradient(90deg, hsl(200 80% 95%), hsl(16 90% 43%));
+    }
+
+    .hint {
+      margin-top: 0.9rem;
+      color: #5b6678;
+      font-size: 0.82rem;
+    }
+
+    .chart-card:nth-child(2) {
+      animation-delay: 0.05s;
+    }
+
+    .chart-card:nth-child(3) {
+      animation-delay: 0.1s;
+    }
+
+    .chart-card:nth-child(4) {
+      animation-delay: 0.14s;
+    }
+
+    .chart-card:nth-child(5) {
+      animation-delay: 0.18s;
+    }
+
+    .chart-card:nth-child(6) {
+      animation-delay: 0.22s;
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(9px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media (max-width: 1060px) {
+      .kpi-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 980px) {
+      .charts {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-card {
+        min-height: 338px;
+      }
+
+      .chart-wrap,
+      .heatmap-wrap {
+        height: 264px;
+      }
+
+      .filter-box {
+        margin-left: 0;
+        width: 100%;
+        max-width: none;
+      }
+    }
+
+    @media (max-width: 768px) {
+      main {
+        width: calc(100% - 0.8rem);
+        margin-top: 0.85rem;
+        margin-bottom: 1.4rem;
+      }
+
+      .header {
+        padding: 1rem;
+      }
+
+      h1 {
+        font-size: clamp(1.2rem, 6vw, 1.55rem);
+      }
+
+      .status {
+        font-size: 0.86rem;
+      }
+
+      .actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .actions > * {
+        width: 100%;
+      }
+
+      .filter-box {
+        min-width: 0;
+      }
+
+      button,
+      .file-label,
+      .filter-box select {
+        justify-content: center;
+        font-size: 0.84rem;
+        padding: 0.62rem 0.8rem;
+      }
+
+      .kpi-grid {
+        gap: 0.62rem;
+      }
+
+      .kpi-card {
+        padding: 0.75rem 0.82rem;
+      }
+
+      .kpi-card h2 {
+        font-size: 0.75rem;
+      }
+
+      .kpi-card p {
+        font-size: clamp(1.08rem, 7vw, 1.4rem);
+      }
+
+      .chart-card {
+        min-height: 305px;
+        padding: 0.72rem 0.78rem 0.8rem;
+      }
+
+      .chart-card h3 {
+        font-size: 0.87rem;
+        line-height: 1.35;
+      }
+
+      .chart-wrap,
+      .heatmap-wrap {
+        height: 232px;
+      }
+
+      .heatmap-table {
+        font-size: 0.68rem;
+      }
+
+      .heatmap-table th,
+      .heatmap-table td {
+        min-width: 40px;
+        padding: 0.3rem 0.28rem;
+      }
+
+      .heatmap-table th.brand-col,
+      .heatmap-table td.brand-col {
+        min-width: 136px;
+        max-width: 160px;
+      }
+
+      .heatmap-legend {
+        font-size: 0.68rem;
+      }
+    }
+
+    @media (max-width: 640px) {
+      main {
+        width: calc(100% - 0.58rem);
+        margin-top: 0.58rem;
+        margin-bottom: 1rem;
+      }
+
+      .header {
+        padding: 0.85rem;
+        border-radius: 16px;
+      }
+
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .chart-card {
+        border-radius: 14px;
+        min-height: 286px;
+      }
+
+      .chart-wrap,
+      .heatmap-wrap {
+        height: 212px;
+      }
+
+      .heatmap-scroll {
+        border-radius: 10px;
+      }
+
+      .heatmap-table th.brand-col,
+      .heatmap-table td.brand-col {
+        min-width: 120px;
+        max-width: 140px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      h1 {
+        font-size: 1.1rem;
+      }
+
+      .kpi-card p {
+        font-size: 1.16rem;
+      }
+
+      .chart-card h3 {
+        font-size: 0.82rem;
+      }
+
+      .chart-wrap,
+      .heatmap-wrap {
+        height: 198px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="header">
+      <p class="eyebrow">Khoa trang bị</p>
+      <h1>Dashboard tình hình sử dụng vật tư trong năm 2025</h1>
+      <p class="status" id="statusText">Đang tải dữ liệu...</p>
+
+      <div class="actions">
+        <button id="reloadBtn" type="button">Tải lại dữ liệu</button>
+        <label for="fileInput" class="file-label">Chọn dữ liệu thủ công</label>
+        <input id="fileInput" type="file" accept=".csv,text/csv">
+
+        <div class="filter-box">
+          <label for="typeFilter">Phân loại</label>
+          <select id="typeFilter"></select>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <article class="kpi-card">
+          <h2>Tổng số lượng</h2>
+          <p id="kpiProductCount">0</p>
+        </article>
+        <article class="kpi-card">
+          <h2>Số loại hãng</h2>
+          <p id="kpiSubtypeCount">0</p>
+        </article>
+        <article class="kpi-card">
+          <h2>Tổng số lượng sử dụng trong năm</h2>
+          <p id="kpiYearQty">0</p>
+        </article>
+        <article class="kpi-card">
+          <h2>Tổng thành tiền</h2>
+          <p id="kpiYearValue">0</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="charts">
+      <article class="chart-card">
+        <h3>1) Số lượng sử dụng 12 tháng của 5 loại sử dụng nhiều nhất</h3>
+        <div class="chart-wrap"><canvas id="chartTopLargest"></canvas></div>
+      </article>
+
+      <article class="chart-card">
+        <h3>2) Số lượng sử dụng 12 tháng của 5 loại giá thấp nhất</h3>
+        <div class="chart-wrap"><canvas id="chartTopSmallest"></canvas></div>
+      </article>
+
+      <article class="chart-card">
+        <h3>3) Số lượng sử dụng hàng tháng theo hãng</h3>
+        <div id="brandHeatmap" class="heatmap-wrap"></div>
+      </article>
+
+      <article class="chart-card">
+        <h3>4) Tổng số lượng sử dụng và thành tiền theo hãng</h3>
+        <div class="chart-wrap"><canvas id="chartBrandValue"></canvas></div>
+      </article>
+
+      <article class="chart-card">
+        <h3>5) Tỷ trọng từng loại trong cả năm</h3>
+        <div class="chart-wrap"><canvas id="chartSubtypeShare"></canvas></div>
+      </article>
+
+      <article class="chart-card">
+        <h3>6) Tương quan giữa giá và số lượng sử dụng</h3>
+        <div class="chart-wrap"><canvas id="chartPriceQty"></canvas></div>
+      </article>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script>
+    const ALL_TYPES_KEY = "__all__";
+    const TOP_COUNT = 5;
+    const BOTTOM_COUNT = 5;
+    const monthLabels = Array.from({ length: 12 }, (_, index) => "T" + (index + 1));
+    const chartRefs = [];
+
+    const state = {
+      allProducts: [],
+      selectedType: ALL_TYPES_KEY,
+      sourceLabel: "data.csv"
+    };
+
+    const baseColors = [
+      "#0f766e", "#0b6e99", "#b45309", "#b84b5f", "#2855a6",
+      "#0d9488", "#a16207", "#1d4ed8", "#e76f51", "#4d908e",
+      "#6d28d9", "#ca8a04", "#2f6a4f", "#9a3412"
+    ];
+
+    function normalizeText(value) {
+      return (value || "").toString().replace(/\s+/g, " ").trim();
+    }
+
+    function parseNumber(value) {
+      if (value == null) {
+        return 0;
+      }
+
+      let text = normalizeText(value);
+      if (!text) {
+        return 0;
+      }
+
+      text = text.replace(/\u00A0/g, "");
+      text = text.replace(/\s/g, "");
+      text = text.replace(/%/g, "");
+      text = text.replace(/[^\d,.-]/g, "");
+
+      if (text.includes(",") && text.includes(".")) {
+        if (text.lastIndexOf(",") > text.lastIndexOf(".")) {
+          text = text.replace(/\./g, "").replace(/,/g, ".");
+        } else {
+          text = text.replace(/,/g, "");
+        }
+      } else if (text.includes(",")) {
+        const chunks = text.split(",");
+        if (chunks.length === 2 && chunks[1].length <= 2) {
+          text = text.replace(",", ".");
+        } else {
+          text = text.replace(/,/g, "");
+        }
+      } else if ((text.match(/\./g) || []).length > 1) {
+        text = text.replace(/\./g, "");
+      }
+
+      const result = Number(text);
+      return Number.isFinite(result) ? result : 0;
+    }
+
+    function colorAt(index, alpha) {
+      const hex = baseColors[index % baseColors.length].replace("#", "");
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      return "rgba(" + r + ", " + g + ", " + b + ", " + alpha + ")";
+    }
+
+    function sum(values) {
+      return values.reduce((total, value) => total + value, 0);
+    }
+
+    function formatInt(value) {
+      return new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(value || 0);
+    }
+
+    function formatMoney(value) {
+      return new Intl.NumberFormat("vi-VN", {
+        style: "currency",
+        currency: "VND",
+        maximumFractionDigits: 0
+      }).format(value || 0);
+    }
+
+    function formatCompactMoney(value) {
+      const number = Number(value) || 0;
+      const abs = Math.abs(number);
+
+      if (abs >= 1000000000) {
+        return (number / 1000000000).toFixed(1) + " tỷ";
+      }
+      if (abs >= 1000000) {
+        return (number / 1000000).toFixed(0) + " tr";
+      }
+      return formatInt(number);
+    }
+
+    function compactAxisLabel(label, maxLength = 14) {
+      const text = normalizeText(label);
+      if (text.length <= maxLength) {
+        return text;
+      }
+
+      const words = text.split(" ").filter(Boolean);
+      if (words.length >= 3) {
+        const acronym = words.map(word => word[0]).join("").toUpperCase();
+        if (acronym.length <= maxLength) {
+          return acronym;
+        }
+      }
+
+      return text.slice(0, maxLength - 1) + "...";
+    }
+
+    function inferBaseType(rawType, section, productName) {
+      const cleanRawType = normalizeText(rawType);
+      if (cleanRawType) {
+        return cleanRawType.replace(/\s*\{?\d+\}?$/u, "").trim();
+      }
+
+      const source = (section + " " + productName).toLowerCase();
+      if (source.includes("khớp gối")) {
+        return "Khớp gối";
+      }
+      if (source.includes("khớp háng toàn phần")) {
+        return "Khớp háng toàn phần";
+      }
+      if (source.includes("khớp háng bán phần")) {
+        return "Khớp háng bán phần";
+      }
+      if (source.includes("khớp háng")) {
+        return "Khớp háng";
+      }
+      if (source.includes("khớp vai")) {
+        return "Khớp vai";
+      }
+      return "Khác";
+    }
+
+    function parseCsvToProducts(csvText) {
+      const parsed = Papa.parse(csvText, {
+        header: false,
+        skipEmptyLines: "greedy"
+      });
+
+      if (parsed.errors.length) {
+        console.warn("CSV parse warnings:", parsed.errors.slice(0, 5));
+      }
+
+      let currentSection = "Khác";
+      const products = [];
+
+      parsed.data.forEach((row, rowIndex) => {
+        if (rowIndex === 0) {
+          return;
+        }
+
+        const sectionText = normalizeText(row[0]);
+        const code = normalizeText(row[1]);
+        const productName = normalizeText(row[2]);
+        const rawType = normalizeText(row[3]);
+
+        if (sectionText && !/^B\d/i.test(code)) {
+          currentSection = sectionText;
+        }
+
+        if (!/^B\d/i.test(code)) {
+          return;
+        }
+
+        const monthly = Array.from({ length: 12 }, (_, monthIndex) => parseNumber(row[13 + monthIndex]));
+        const qty2025 = parseNumber(row[11]);
+        const monthlyTotal = sum(monthly);
+        const yearQty = qty2025 > 0 ? qty2025 : monthlyTotal;
+        const unitPrice = parseNumber(row[5]);
+        const baseType = inferBaseType(rawType, currentSection, productName);
+        const typeLabel = rawType || (baseType + " - " + code);
+
+        products.push({
+          code,
+          name: productName || "Không rõ tên",
+          section: currentSection,
+          typeGroup: baseType,
+          typeLabel,
+          unitPrice,
+          company: normalizeText(row[6]) || "Chưa rõ",
+          brand: normalizeText(row[7]) || "Chưa rõ",
+          country: normalizeText(row[8]) || "Chưa rõ",
+          tenderPct: parseNumber(row[9]),
+          tenderQty: parseNumber(row[10]),
+          qty2025,
+          yearQty,
+          yearValue: unitPrice * yearQty,
+          monthly
+        });
+      });
+
+      return products;
+    }
+
+    function aggregateBySubtype(products) {
+      const map = new Map();
+
+      for (const item of products) {
+        const key = item.typeLabel;
+        if (!map.has(key)) {
+          map.set(key, {
+            label: key,
+            typeGroup: item.typeGroup,
+            monthly: Array(12).fill(0),
+            yearQty: 0,
+            yearValue: 0,
+            unitPriceSum: 0,
+            rowCount: 0
+          });
+        }
+
+        const target = map.get(key);
+        for (let monthIndex = 0; monthIndex < 12; monthIndex += 1) {
+          target.monthly[monthIndex] += item.monthly[monthIndex] || 0;
+        }
+        target.yearQty += item.yearQty;
+        target.yearValue += item.yearValue;
+        target.unitPriceSum += item.unitPrice;
+        target.rowCount += 1;
+      }
+
+      return Array.from(map.values()).map(entry => {
+        const unitPriceRef = entry.unitPriceSum / Math.max(entry.rowCount, 1);
+        return {
+          ...entry,
+          unitPriceRef,
+          avgUnitPrice: entry.yearQty > 0 ? entry.yearValue / entry.yearQty : unitPriceRef
+        };
+      });
+    }
+
+    function aggregateByBrand(products) {
+      const map = new Map();
+
+      for (const item of products) {
+        if (!map.has(item.brand)) {
+          map.set(item.brand, {
+            brand: item.brand,
+            monthly: Array(12).fill(0),
+            yearQty: 0,
+            yearValue: 0
+          });
+        }
+
+        const target = map.get(item.brand);
+        for (let monthIndex = 0; monthIndex < 12; monthIndex += 1) {
+          target.monthly[monthIndex] += item.monthly[monthIndex] || 0;
+        }
+        target.yearQty += item.yearQty;
+        target.yearValue += item.yearValue;
+      }
+
+      return Array.from(map.values()).sort((a, b) => b.yearQty - a.yearQty);
+    }
+
+    function setStatus(message, isError) {
+      const node = document.getElementById("statusText");
+      node.textContent = message;
+      node.style.color = isError ? "#a0142f" : "#576175";
+    }
+
+    function destroyCharts() {
+      while (chartRefs.length) {
+        chartRefs.pop().destroy();
+      }
+    }
+
+    function createChart(canvasId, chartConfig) {
+      const chart = new Chart(document.getElementById(canvasId), chartConfig);
+      chartRefs.push(chart);
+    }
+
+    function populateTypeFilter(products) {
+      const select = document.getElementById("typeFilter");
+      const previous = state.selectedType;
+
+      const subtypeSetByType = new Map();
+      const allSubtypeSet = new Set();
+
+      for (const item of products) {
+        const subtypeKey = item.typeLabel || item.code;
+        allSubtypeSet.add(subtypeKey);
+
+        if (!subtypeSetByType.has(item.typeGroup)) {
+          subtypeSetByType.set(item.typeGroup, new Set());
+        }
+        subtypeSetByType.get(item.typeGroup).add(subtypeKey);
+      }
+
+      const orderedTypes = Array.from(subtypeSetByType.entries())
+        .map(([typeName, subtypeSet]) => [typeName, subtypeSet.size])
+        .sort((a, b) => b[1] - a[1]);
+
+      select.innerHTML = "";
+
+      const allOption = document.createElement("option");
+      allOption.value = ALL_TYPES_KEY;
+      allOption.textContent = "Tất cả (" + formatInt(allSubtypeSet.size) + ")";
+      select.appendChild(allOption);
+
+      orderedTypes.forEach(([typeName, typeCount]) => {
+        const option = document.createElement("option");
+        option.value = typeName;
+        option.textContent = typeName + " (" + formatInt(typeCount) + ")";
+        select.appendChild(option);
+      });
+
+      const canKeepSelection = previous === ALL_TYPES_KEY || orderedTypes.some(([typeName]) => typeName === previous);
+      state.selectedType = canKeepSelection ? previous : ALL_TYPES_KEY;
+      select.value = state.selectedType;
+    }
+
+    function getActiveProducts() {
+      if (state.selectedType === ALL_TYPES_KEY) {
+        return state.allProducts;
+      }
+      return state.allProducts.filter(item => item.typeGroup === state.selectedType);
+    }
+
+    function updateKpi(activeProducts, subtypeEntries) {
+      const yearQty = activeProducts.reduce((sumValue, item) => sumValue + item.yearQty, 0);
+      const yearValue = activeProducts.reduce((sumValue, item) => sumValue + item.yearValue, 0);
+      const brandTypeCount = new Set(
+        activeProducts.map(item => normalizeText(item.brand)).filter(Boolean)
+      ).size;
+
+      document.getElementById("kpiProductCount").textContent = formatInt(activeProducts.length);
+      document.getElementById("kpiSubtypeCount").textContent = formatInt(brandTypeCount);
+      document.getElementById("kpiYearQty").textContent = formatInt(yearQty);
+      document.getElementById("kpiYearValue").textContent = formatCompactMoney(yearValue);
+    }
+
+    function renderTopLargest(subtypeEntries) {
+      const orderedByUsageDesc = [...subtypeEntries]
+        .filter(entry => entry.yearQty > 0)
+        .sort((a, b) => b.yearQty - a.yearQty);
+
+      const topEntries = (orderedByUsageDesc.length ? orderedByUsageDesc : [...subtypeEntries]
+        .sort((a, b) => b.yearQty - a.yearQty))
+        .slice(0, TOP_COUNT);
+
+      createChart("chartTopLargest", {
+        type: "line",
+        data: {
+          labels: monthLabels,
+          datasets: topEntries.map((entry, index) => ({
+            label: entry.label,
+            data: entry.monthly,
+            borderColor: colorAt(index, 0.95),
+            backgroundColor: colorAt(index, 0.18),
+            borderWidth: 2.2,
+            pointRadius: 2.6,
+            tension: 0.25,
+            fill: false
+          }))
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: { boxWidth: 11, usePointStyle: true }
+            },
+            tooltip: {
+              callbacks: {
+                label: context => " " + context.dataset.label + ": " + formatInt(context.parsed.y) + " bộ"
+              }
+            }
+          },
+          scales: {
+            y: {
+              ticks: { callback: value => formatInt(value) },
+              grid: { color: "rgba(56, 73, 97, 0.13)" }
+            },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    function renderTopSmallest(subtypeEntries) {
+      const orderedAscending = [...subtypeEntries].sort((a, b) => a.unitPriceRef - b.unitPriceRef);
+      let pool = orderedAscending.filter(entry => entry.unitPriceRef > 0);
+      if (pool.length < BOTTOM_COUNT) {
+        pool = orderedAscending;
+      }
+
+      const bottomEntries = pool.slice(0, BOTTOM_COUNT);
+
+      createChart("chartTopSmallest", {
+        type: "line",
+        data: {
+          labels: monthLabels,
+          datasets: bottomEntries.map((entry, index) => ({
+            label: entry.label,
+            data: entry.monthly,
+            borderColor: colorAt(index + 6, 0.95),
+            backgroundColor: colorAt(index + 6, 0.17),
+            borderWidth: 2,
+            pointRadius: 2.4,
+            tension: 0.22,
+            fill: false
+          }))
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: { boxWidth: 11, usePointStyle: true }
+            },
+            tooltip: {
+              callbacks: {
+                label: context => " " + context.dataset.label + ": " + formatInt(context.parsed.y) + " bộ"
+              }
+            }
+          },
+          scales: {
+            y: {
+              ticks: { callback: value => formatInt(value) },
+              grid: { color: "rgba(56, 73, 97, 0.13)" }
+            },
+            x: { grid: { display: false } }
+          }
+        }
+      });
+    }
+
+    function heatColor(value, maxValue) {
+      const ratio = maxValue > 0 ? value / maxValue : 0;
+      const hue = 200 - ratio * 184;
+      const lightness = 95 - ratio * 48;
+      return "hsl(" + hue.toFixed(0) + " 85% " + lightness.toFixed(0) + "%)";
+    }
+
+    function renderBrandHeatmap(brandEntries) {
+      const root = document.getElementById("brandHeatmap");
+      root.innerHTML = "";
+
+      const topBrands = brandEntries.slice(0, 10);
+      if (!topBrands.length) {
+        const empty = document.createElement("div");
+        empty.className = "heatmap-empty";
+        empty.textContent = "Không có dữ liệu hãng trong bộ lọc hiện tại.";
+        root.appendChild(empty);
+        return;
+      }
+
+      const maxValue = Math.max(1, ...topBrands.flatMap(entry => entry.monthly));
+      const table = document.createElement("table");
+      table.className = "heatmap-table";
+
+      const thead = document.createElement("thead");
+      const headerRow = document.createElement("tr");
+
+      const brandHeader = document.createElement("th");
+      brandHeader.textContent = "Hãng";
+      brandHeader.className = "brand-col";
+      headerRow.appendChild(brandHeader);
+
+      monthLabels.forEach(label => {
+        const monthHeader = document.createElement("th");
+        monthHeader.textContent = label;
+        headerRow.appendChild(monthHeader);
+      });
+
+      const totalHeader = document.createElement("th");
+      totalHeader.textContent = "Tổng";
+      headerRow.appendChild(totalHeader);
+
+      thead.appendChild(headerRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement("tbody");
+      topBrands.forEach(entry => {
+        const row = document.createElement("tr");
+
+        const brandCell = document.createElement("td");
+        brandCell.className = "brand-col";
+        brandCell.textContent = entry.brand;
+        brandCell.title = entry.brand;
+        row.appendChild(brandCell);
+
+        entry.monthly.forEach(value => {
+          const cell = document.createElement("td");
+          cell.style.background = heatColor(value, maxValue);
+          const ratio = maxValue > 0 ? value / maxValue : 0;
+          cell.style.color = ratio > 0.58 ? "#ffffff" : "#25324a";
+          cell.textContent = value > 0 ? formatInt(value) : "";
+          cell.title = entry.brand + " - " + formatInt(value) + " bộ";
+          row.appendChild(cell);
+        });
+
+        const totalCell = document.createElement("td");
+        totalCell.className = "total-col";
+        totalCell.textContent = formatInt(entry.yearQty);
+        row.appendChild(totalCell);
+
+        tbody.appendChild(row);
+      });
+
+      table.appendChild(tbody);
+
+      const scroll = document.createElement("div");
+      scroll.className = "heatmap-scroll";
+      scroll.appendChild(table);
+      root.appendChild(scroll);
+
+      const legend = document.createElement("div");
+      legend.className = "heatmap-legend";
+
+      const low = document.createElement("span");
+      low.textContent = "Thấp";
+      legend.appendChild(low);
+
+      const bar = document.createElement("div");
+      bar.className = "heatmap-legend-bar";
+      legend.appendChild(bar);
+
+      const high = document.createElement("span");
+      high.textContent = "Cao";
+      legend.appendChild(high);
+
+      root.appendChild(legend);
+    }
+
+    function renderBrandQtyAndValue(brandEntries) {
+      const topBrands = brandEntries.slice(0, 8);
+
+      createChart("chartBrandValue", {
+        type: "bar",
+        data: {
+          labels: topBrands.map(entry => entry.brand),
+          datasets: [
+            {
+              label: "Số lượng năm",
+              data: topBrands.map(entry => entry.yearQty),
+              yAxisID: "yQty",
+              backgroundColor: colorAt(1, 0.78),
+              borderRadius: 6
+            },
+            {
+              label: "Thành tiền",
+              data: topBrands.map(entry => entry.yearValue),
+              yAxisID: "yValue",
+              type: "line",
+              borderColor: colorAt(4, 0.95),
+              backgroundColor: colorAt(4, 0.26),
+              borderWidth: 2.4,
+              tension: 0.26,
+              pointRadius: 2.7
+            }
+          ]
+        },
+        options: {
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: "bottom" },
+            tooltip: {
+              callbacks: {
+                label: context => {
+                  if (context.dataset.yAxisID === "yValue") {
+                    return " Giá x số lượng: " + formatMoney(context.parsed.y);
+                  }
+                  return " Số lượng năm: " + formatInt(context.parsed.y) + " bộ";
+                }
+              }
+            }
+          },
+          scales: {
+            yQty: {
+              type: "linear",
+              position: "left",
+              ticks: { callback: value => formatInt(value) },
+              grid: { color: "rgba(56, 73, 97, 0.13)" },
+              title: {
+                display: true,
+                text: "Số lượng"
+              }
+            },
+            yValue: {
+              type: "linear",
+              position: "right",
+              grid: { drawOnChartArea: false },
+              ticks: { callback: value => formatCompactMoney(value) },
+              title: {
+                display: true,
+                text: "Thành tiền"
+              }
+            },
+            x: {
+              grid: { display: false },
+              ticks: {
+                maxRotation: 0,
+                minRotation: 0,
+                callback: (_, index) => {
+                  const label = topBrands[index] ? topBrands[index].brand : "";
+                  return compactAxisLabel(label, 14);
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderSubtypeShare(subtypeEntries) {
+      const sorted = [...subtypeEntries].sort((a, b) => b.yearQty - a.yearQty);
+      let view = sorted;
+      if (sorted.length > 14) {
+        const top = sorted.slice(0, 13);
+        const rest = sorted.slice(13);
+        top.push({
+          label: "Khác",
+          yearQty: rest.reduce((sumValue, entry) => sumValue + entry.yearQty, 0)
+        });
+        view = top;
+      }
+
+      createChart("chartSubtypeShare", {
+        type: "doughnut",
+        data: {
+          labels: view.map(entry => entry.label),
+          datasets: [
+            {
+              data: view.map(entry => entry.yearQty),
+              backgroundColor: view.map((_, index) => colorAt(index, 0.83)),
+              borderColor: "#fff",
+              borderWidth: 1.8
+            }
+          ]
+        },
+        options: {
+          maintainAspectRatio: false,
+          cutout: "52%",
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: {
+                usePointStyle: true,
+                boxWidth: 11,
+                generateLabels: chart => chart.data.labels.map((label, index) => ({
+                  text: label.length > 26 ? label.slice(0, 26) + "..." : label,
+                  fillStyle: chart.data.datasets[0].backgroundColor[index],
+                  strokeStyle: chart.data.datasets[0].backgroundColor[index],
+                  index,
+                  hidden: false
+                }))
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: context => {
+                  const total = context.dataset.data.reduce((sumValue, value) => sumValue + value, 0);
+                  const value = context.parsed || 0;
+                  const ratio = total > 0 ? (value * 100) / total : 0;
+                  return " " + context.label + ": " + formatInt(value) + " bo (" + ratio.toFixed(1) + "%)";
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderPriceQtyCorrelation(subtypeEntries) {
+      const grouped = new Map();
+
+      subtypeEntries.forEach(entry => {
+        if (entry.yearQty <= 0 || entry.avgUnitPrice <= 0) {
+          return;
+        }
+
+        if (!grouped.has(entry.typeGroup)) {
+          grouped.set(entry.typeGroup, []);
+        }
+
+        grouped.get(entry.typeGroup).push({
+          x: entry.avgUnitPrice,
+          y: entry.yearQty,
+          r: Math.max(4, Math.min(16, Math.sqrt(Math.max(entry.yearValue, 1)) / 26000)),
+          label: entry.label,
+          yearValue: entry.yearValue,
+          typeGroup: entry.typeGroup
+        });
+      });
+
+      const datasets = Array.from(grouped.entries()).map(([group, points], index) => ({
+        label: group,
+        data: points,
+        backgroundColor: colorAt(index, 0.5),
+        borderColor: colorAt(index, 0.96),
+        borderWidth: 1.2
+      }));
+
+      createChart("chartPriceQty", {
+        type: "bubble",
+        data: { datasets },
+        options: {
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: "bottom"
+            },
+            tooltip: {
+              callbacks: {
+                title: context => context[0].raw.label,
+                label: context => {
+                  const point = context.raw;
+                  return [
+                    " " + point.typeGroup,
+                    " Đơn giá: " + formatMoney(point.x),
+                    " Số lượng năm: " + formatInt(point.y) + " bộ",
+                    " Thành tiền: " + formatMoney(point.yearValue)
+                  ];
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: {
+                display: true,
+                text: "Đơn giá"
+              },
+              ticks: {
+                callback: value => (Number(value) / 1000000).toFixed(0) + " tr"
+              },
+              grid: { color: "rgba(56, 73, 97, 0.13)" }
+            },
+            y: {
+              title: {
+                display: true,
+                text: "Số lượng sử dụng năm"
+              },
+              ticks: { callback: value => formatInt(value) },
+              grid: { color: "rgba(56, 73, 97, 0.13)" }
+            }
+          }
+        }
+      });
+    }
+
+    function renderDashboard() {
+      const activeProducts = getActiveProducts();
+      const subtypeEntries = aggregateBySubtype(activeProducts);
+      const brandEntries = aggregateByBrand(activeProducts);
+
+      updateKpi(activeProducts, subtypeEntries);
+
+      destroyCharts();
+      renderTopLargest(subtypeEntries);
+      renderTopSmallest(subtypeEntries);
+      renderBrandHeatmap(brandEntries);
+      renderBrandQtyAndValue(brandEntries);
+      renderSubtypeShare(subtypeEntries);
+      renderPriceQtyCorrelation(subtypeEntries);
+
+      const selectedLabel = state.selectedType === ALL_TYPES_KEY ? "Tất cả" : state.selectedType;
+      setStatus(
+        "Nguồn: " + state.sourceLabel + " | Đang xem: " + selectedLabel + " | " + formatInt(activeProducts.length) + " sản phẩm vật tư.",
+        false
+      );
+    }
+
+    async function loadCsvFromCurrentFolder() {
+      const response = await fetch("data.csv", { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error("Không thể tải data.csv (HTTP " + response.status + ")");
+      }
+      return response.text();
+    }
+
+    async function applyCsvText(csvText, sourceLabel) {
+      const products = parseCsvToProducts(csvText);
+      if (!products.length) {
+        throw new Error("Không tìm thấy dòng mã sản phẩm theo cột Nhóm (Bxxxx). Vui lòng kiểm tra CSV.");
+      }
+
+      state.allProducts = products;
+      state.sourceLabel = sourceLabel;
+      populateTypeFilter(products);
+      renderDashboard();
+    }
+
+    async function init() {
+      try {
+        setStatus("Đang tải dữ liệu từ data.csv...", false);
+        const csvText = await loadCsvFromCurrentFolder();
+        await applyCsvText(csvText, "data.csv");
+      } catch (error) {
+        console.error(error);
+        setStatus(
+          "Không tự động đọc được data.csv. Hãy chọn CSV thủ công hoặc chạy python3 -m http.server.",
+          true
+        );
+      }
+    }
+
+    document.getElementById("reloadBtn").addEventListener("click", () => {
+      init();
+    });
+
+    document.getElementById("typeFilter").addEventListener("change", event => {
+      state.selectedType = event.target.value;
+      renderDashboard();
+    });
+
+    document.getElementById("fileInput").addEventListener("change", async event => {
+      const file = event.target.files[0];
+      if (!file) {
+        return;
+      }
+
+      try {
+        setStatus("Đang đọc file " + file.name + " ...", false);
+        const csvText = await file.text();
+        await applyCsvText(csvText, file.name);
+      } catch (error) {
+        console.error(error);
+        setStatus("Đọc file CSV thất bại: " + error.message, true);
+      }
+    });
+
+    init();
+  </script>
+</body>
+</html>
