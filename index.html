@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dashboard Theo Loại Khớp</title>
+  <title>Dashboard tình hình sử dụng vật tư</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -200,7 +200,127 @@
       padding: 0.8rem 0.95rem 0.92rem;
       min-height: 362px;
       overflow: hidden;
+      position: relative;
       animation: rise 0.7s ease both;
+    }
+
+    .chart-zoom-btn {
+      position: absolute;
+      top: 0.6rem;
+      right: 0.6rem;
+      width: 32px;
+      height: 32px;
+      min-height: 0;
+      border-radius: 999px;
+      border: 1px solid #d6c5ac;
+      background: #fff8ed;
+      color: #374151;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+      padding: 0;
+      width: 32px !important;
+      height: 32px !important;
+      min-height: 0 !important;
+      z-index: 3;
+    }
+
+    .chart-zoom-btn:hover {
+      transform: translateY(-1px);
+      border-color: #bfa889;
+      box-shadow: 0 6px 14px rgba(31, 42, 55, 0.16);
+    }
+
+    .chart-zoom-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .chart-zoom-modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 60;
+    }
+
+    .chart-zoom-modal.is-open {
+      display: flex;
+    }
+
+    .chart-zoom-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(17, 24, 39, 0.58);
+      backdrop-filter: blur(1px);
+    }
+
+    .chart-zoom-dialog {
+      position: relative;
+      width: min(1160px, calc(100% - 2rem));
+      max-height: calc(100vh - 2rem);
+      background: #fffdf8;
+      border: 1px solid #d7c7af;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(17, 24, 39, 0.3);
+      padding: 0.85rem 0.9rem 0.9rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      z-index: 2;
+    }
+
+    .chart-zoom-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+    }
+
+    .chart-zoom-title {
+      margin: 0;
+      font-size: 0.96rem;
+      font-weight: 700;
+      color: #26354e;
+    }
+
+    .chart-zoom-close {
+      border: 1px solid #d6c5ac;
+      width: 34px;
+      height: 34px;
+      min-height: 0;
+      flex: 0 0 auto;
+      border-radius: 999px;
+      background: #fff8ed;
+      color: #374151;
+      font-size: 1.1rem;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .chart-zoom-body {
+      border: 1px solid #e1d4c2;
+      border-radius: 12px;
+      background: #fffefb;
+      min-height: 72vh;
+      height: 72vh;
+      padding: 0.55rem;
+      position: relative;
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .chart-zoom-body canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
     }
 
     .chart-card h3 {
@@ -448,6 +568,13 @@
         padding: 0.72rem 0.78rem 0.8rem;
       }
 
+      .chart-zoom-btn {
+        top: 0.5rem;
+        right: 0.5rem;
+        width: 30px !important;
+        height: 30px !important;
+      }
+
       .chart-card h3 {
         font-size: 0.87rem;
         line-height: 1.35;
@@ -477,6 +604,22 @@
       .heatmap-legend {
         font-size: 0.68rem;
       }
+
+      .chart-zoom-dialog {
+        width: calc(100% - 0.9rem);
+        max-height: calc(100vh - 0.9rem);
+        padding: 0.72rem;
+      }
+
+      .chart-zoom-title {
+        font-size: 0.88rem;
+      }
+
+      .chart-zoom-body {
+        min-height: 66vh;
+        height: 66vh;
+        padding: 0.36rem;
+      }
     }
 
     @media (max-width: 640px) {
@@ -503,6 +646,11 @@
       .chart-wrap,
       .heatmap-wrap {
         height: 212px;
+      }
+
+      .chart-zoom-body {
+        min-height: 62vh;
+        height: 62vh;
       }
 
       .heatmap-scroll {
@@ -532,6 +680,24 @@
       .chart-wrap,
       .heatmap-wrap {
         height: 198px;
+      }
+
+      .chart-zoom-dialog {
+        width: calc(100% - 0.55rem);
+      }
+
+      .chart-zoom-title {
+        font-size: 0.82rem;
+      }
+
+      .chart-zoom-close {
+        width: 30px;
+        height: 30px;
+      }
+
+      .chart-zoom-btn {
+        width: 28px !important;
+        height: 28px !important;
       }
     }
   </style>
@@ -576,36 +742,95 @@
 
     <section class="charts">
       <article class="chart-card">
+        <button class="chart-zoom-btn" type="button" data-target="chartTopLargest" data-kind="canvas" aria-label="Phóng to biểu đồ 1" title="Phóng to">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 3H3v5"></path>
+            <path d="M3 3l6 6"></path>
+            <path d="M16 21h5v-5"></path>
+            <path d="M21 21l-6-6"></path>
+          </svg>
+        </button>
         <h3>1) Số lượng sử dụng 12 tháng của 5 loại sử dụng nhiều nhất</h3>
         <div class="chart-wrap"><canvas id="chartTopLargest"></canvas></div>
       </article>
 
       <article class="chart-card">
+        <button class="chart-zoom-btn" type="button" data-target="chartTopSmallest" data-kind="canvas" aria-label="Phóng to biểu đồ 2" title="Phóng to">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 3H3v5"></path>
+            <path d="M3 3l6 6"></path>
+            <path d="M16 21h5v-5"></path>
+            <path d="M21 21l-6-6"></path>
+          </svg>
+        </button>
         <h3>2) Số lượng sử dụng 12 tháng của 5 loại giá thấp nhất</h3>
         <div class="chart-wrap"><canvas id="chartTopSmallest"></canvas></div>
       </article>
 
       <article class="chart-card">
+        <button class="chart-zoom-btn" type="button" data-target="brandHeatmap" data-kind="heatmap" aria-label="Phóng to biểu đồ 3" title="Phóng to">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 3H3v5"></path>
+            <path d="M3 3l6 6"></path>
+            <path d="M16 21h5v-5"></path>
+            <path d="M21 21l-6-6"></path>
+          </svg>
+        </button>
         <h3>3) Số lượng sử dụng hàng tháng theo hãng</h3>
         <div id="brandHeatmap" class="heatmap-wrap"></div>
       </article>
 
       <article class="chart-card">
+        <button class="chart-zoom-btn" type="button" data-target="chartBrandValue" data-kind="canvas" aria-label="Phóng to biểu đồ 4" title="Phóng to">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 3H3v5"></path>
+            <path d="M3 3l6 6"></path>
+            <path d="M16 21h5v-5"></path>
+            <path d="M21 21l-6-6"></path>
+          </svg>
+        </button>
         <h3>4) Tổng số lượng sử dụng và thành tiền theo hãng</h3>
         <div class="chart-wrap"><canvas id="chartBrandValue"></canvas></div>
       </article>
 
       <article class="chart-card">
+        <button class="chart-zoom-btn" type="button" data-target="chartSubtypeShare" data-kind="canvas" aria-label="Phóng to biểu đồ 5" title="Phóng to">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 3H3v5"></path>
+            <path d="M3 3l6 6"></path>
+            <path d="M16 21h5v-5"></path>
+            <path d="M21 21l-6-6"></path>
+          </svg>
+        </button>
         <h3>5) Tỷ trọng từng loại trong cả năm</h3>
         <div class="chart-wrap"><canvas id="chartSubtypeShare"></canvas></div>
       </article>
 
       <article class="chart-card">
+        <button class="chart-zoom-btn" type="button" data-target="chartPriceQty" data-kind="canvas" aria-label="Phóng to biểu đồ 6" title="Phóng to">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 3H3v5"></path>
+            <path d="M3 3l6 6"></path>
+            <path d="M16 21h5v-5"></path>
+            <path d="M21 21l-6-6"></path>
+          </svg>
+        </button>
         <h3>6) Tương quan giữa giá và số lượng sử dụng</h3>
         <div class="chart-wrap"><canvas id="chartPriceQty"></canvas></div>
       </article>
     </section>
   </main>
+
+  <div id="chartZoomModal" class="chart-zoom-modal" aria-hidden="true">
+    <div class="chart-zoom-backdrop" id="chartZoomBackdrop"></div>
+    <div class="chart-zoom-dialog" role="dialog" aria-modal="true" aria-labelledby="chartZoomTitle">
+      <div class="chart-zoom-head">
+        <h3 class="chart-zoom-title" id="chartZoomTitle">Phóng to biểu đồ</h3>
+        <button class="chart-zoom-close" id="chartZoomClose" type="button" aria-label="Đóng">x</button>
+      </div>
+      <div class="chart-zoom-body" id="chartZoomBody"></div>
+    </div>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
@@ -620,6 +845,10 @@
       allProducts: [],
       selectedType: ALL_TYPES_KEY,
       sourceLabel: "data.csv"
+    };
+
+    const zoomState = {
+      chart: null
     };
 
     const baseColors = [
@@ -879,6 +1108,99 @@
       while (chartRefs.length) {
         chartRefs.pop().destroy();
       }
+    }
+
+    function deepClonePreserveFunctions(value) {
+      if (Array.isArray(value)) {
+        return value.map(item => deepClonePreserveFunctions(item));
+      }
+
+      if (value && typeof value === "object") {
+        const clone = {};
+        for (const [key, val] of Object.entries(value)) {
+          clone[key] = deepClonePreserveFunctions(val);
+        }
+        return clone;
+      }
+
+      return value;
+    }
+
+    function closeZoomModal() {
+      const modal = document.getElementById("chartZoomModal");
+      const body = document.getElementById("chartZoomBody");
+
+      if (zoomState.chart) {
+        zoomState.chart.destroy();
+        zoomState.chart = null;
+      }
+
+      body.innerHTML = "";
+      modal.classList.remove("is-open");
+      modal.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+    }
+
+    function openZoomModal(targetId, kind, titleText) {
+      const modal = document.getElementById("chartZoomModal");
+      const title = document.getElementById("chartZoomTitle");
+      const body = document.getElementById("chartZoomBody");
+
+      closeZoomModal();
+      title.textContent = titleText || "Phóng to biểu đồ";
+      body.innerHTML = "";
+
+      if (kind === "heatmap") {
+        const source = document.getElementById(targetId);
+        if (!source) {
+          return;
+        }
+        const clone = source.cloneNode(true);
+        clone.removeAttribute("id");
+        clone.style.height = "100%";
+        body.appendChild(clone);
+      } else {
+        const sourceCanvas = document.getElementById(targetId);
+        const sourceChart = sourceCanvas ? Chart.getChart(sourceCanvas) : null;
+        if (!sourceChart) {
+          return;
+        }
+
+        const canvas = document.createElement("canvas");
+        body.appendChild(canvas);
+        const configSource = sourceChart.config && sourceChart.config._config
+          ? sourceChart.config._config
+          : sourceChart.config;
+        const configClone = deepClonePreserveFunctions(configSource);
+        configClone.options = configClone.options || {};
+        configClone.options.maintainAspectRatio = false;
+        zoomState.chart = new Chart(canvas, configClone);
+      }
+
+      modal.classList.add("is-open");
+      modal.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+    }
+
+    function setupZoomButtons() {
+      const buttons = document.querySelectorAll(".chart-zoom-btn");
+      buttons.forEach(button => {
+        button.addEventListener("click", () => {
+          const targetId = button.getAttribute("data-target");
+          const kind = button.getAttribute("data-kind") || "canvas";
+          const card = button.closest(".chart-card");
+          const title = card ? (card.querySelector("h3") || {}).textContent : "Phóng to biểu đồ";
+          openZoomModal(targetId, kind, title || "Phóng to biểu đồ");
+        });
+      });
+
+      document.getElementById("chartZoomClose").addEventListener("click", closeZoomModal);
+      document.getElementById("chartZoomBackdrop").addEventListener("click", closeZoomModal);
+      document.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+          closeZoomModal();
+        }
+      });
     }
 
     function createChart(canvasId, chartConfig) {
@@ -1362,6 +1684,7 @@
       const subtypeEntries = aggregateBySubtype(activeProducts);
       const brandEntries = aggregateByBrand(activeProducts);
 
+      closeZoomModal();
       updateKpi(activeProducts, subtypeEntries);
 
       destroyCharts();
@@ -1438,6 +1761,7 @@
       }
     });
 
+    setupZoomButtons();
     init();
   </script>
 </body>
