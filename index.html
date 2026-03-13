@@ -1047,6 +1047,22 @@
     }
 
     function aggregateBySubtype(products) {
+      function summarizeDistinct(values) {
+        const list = Array.from(values)
+          .map(value => normalizeText(value))
+          .filter(Boolean);
+
+        if (!list.length) {
+          return "Chưa rõ";
+        }
+
+        if (list.length <= 2) {
+          return list.join(", ");
+        }
+
+        return list.slice(0, 2).join(", ") + " +" + (list.length - 2) + " khác";
+      }
+
       const map = new Map();
 
       for (const item of products) {
@@ -1059,7 +1075,9 @@
             yearQty: 0,
             yearValue: 0,
             unitPriceSum: 0,
-            rowCount: 0
+            rowCount: 0,
+            brands: new Set(),
+            companies: new Set()
           });
         }
 
@@ -1071,14 +1089,19 @@
         target.yearValue += item.yearValue;
         target.unitPriceSum += item.unitPrice;
         target.rowCount += 1;
+        target.brands.add(item.brand);
+        target.companies.add(item.company);
       }
 
       return Array.from(map.values()).map(entry => {
+        const { brands, companies, ...base } = entry;
         const unitPriceRef = entry.unitPriceSum / Math.max(entry.rowCount, 1);
         return {
-          ...entry,
+          ...base,
           unitPriceRef,
-          avgUnitPrice: entry.yearQty > 0 ? entry.yearValue / entry.yearQty : unitPriceRef
+          avgUnitPrice: entry.yearQty > 0 ? entry.yearValue / entry.yearQty : unitPriceRef,
+          brand: summarizeDistinct(brands),
+          company: summarizeDistinct(companies)
         };
       });
     }
@@ -1536,6 +1559,10 @@
               }
             },
             x: {
+              title: {
+                display: true,
+                text: "Hãng"
+              },
               grid: { display: false },
               ticks: {
                 maxRotation: 0,
@@ -1601,7 +1628,7 @@
                   const total = context.dataset.data.reduce((sumValue, value) => sumValue + value, 0);
                   const value = context.parsed || 0;
                   const ratio = total > 0 ? (value * 100) / total : 0;
-                  return " " + context.label + ": " + formatInt(value) + " bo (" + ratio.toFixed(1) + "%)";
+                  return " " + context.label + ": " + formatInt(value) + " bộ (" + ratio.toFixed(1) + "%)";
                 }
               }
             }
@@ -1628,7 +1655,9 @@
           r: Math.max(4, Math.min(16, Math.sqrt(Math.max(entry.yearValue, 1)) / 26000)),
           label: entry.label,
           yearValue: entry.yearValue,
-          typeGroup: entry.typeGroup
+          typeGroup: entry.typeGroup,
+          brand: entry.brand,
+          company: entry.company
         });
       });
 
@@ -1658,7 +1687,9 @@
                     " " + point.typeGroup,
                     " Đơn giá: " + formatMoney(point.x),
                     " Số lượng năm: " + formatInt(point.y) + " bộ",
-                    " Thành tiền: " + formatMoney(point.yearValue)
+                    " Thành tiền: " + formatMoney(point.yearValue),
+                    " Hãng: " + (point.brand || "Chưa rõ"),
+                    " Công ty: " + (point.company || "Chưa rõ")
                   ];
                 }
               }
