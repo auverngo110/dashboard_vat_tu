@@ -1315,6 +1315,8 @@
           labels: monthLabels,
           datasets: topEntries.map((entry, index) => ({
             label: entry.label,
+            brand: entry.brand,
+            company: entry.company,
             data: entry.monthly,
             borderColor: colorAt(index, 0.95),
             backgroundColor: colorAt(index, 0.18),
@@ -1333,7 +1335,11 @@
             },
             tooltip: {
               callbacks: {
-                label: context => " " + context.dataset.label + ": " + formatInt(context.parsed.y) + " bộ"
+                label: context => [
+                  " " + context.dataset.label + ": " + formatInt(context.parsed.y) + " bộ",
+                  " Hãng: " + (context.dataset.brand || "Chưa rõ"),
+                  " Công ty: " + (context.dataset.company || "Chưa rõ")
+                ]
               }
             }
           },
@@ -1363,6 +1369,8 @@
           labels: monthLabels,
           datasets: bottomEntries.map((entry, index) => ({
             label: entry.label,
+            brand: entry.brand,
+            company: entry.company,
             data: entry.monthly,
             borderColor: colorAt(index + 6, 0.95),
             backgroundColor: colorAt(index + 6, 0.17),
@@ -1381,7 +1389,11 @@
             },
             tooltip: {
               callbacks: {
-                label: context => " " + context.dataset.label + ": " + formatInt(context.parsed.y) + " bộ"
+                label: context => [
+                  " " + context.dataset.label + ": " + formatInt(context.parsed.y) + " bộ",
+                  " Hãng: " + (context.dataset.brand || "Chưa rõ"),
+                  " Công ty: " + (context.dataset.company || "Chưa rõ")
+                ]
               }
             }
           },
@@ -1586,7 +1598,9 @@
         const rest = sorted.slice(13);
         top.push({
           label: "Khác",
-          yearQty: rest.reduce((sumValue, entry) => sumValue + entry.yearQty, 0)
+          yearQty: rest.reduce((sumValue, entry) => sumValue + entry.yearQty, 0),
+          brand: "Tổng hợp nhiều hãng",
+          company: "Tổng hợp nhiều công ty"
         });
         view = top;
       }
@@ -1628,7 +1642,12 @@
                   const total = context.dataset.data.reduce((sumValue, value) => sumValue + value, 0);
                   const value = context.parsed || 0;
                   const ratio = total > 0 ? (value * 100) / total : 0;
-                  return " " + context.label + ": " + formatInt(value) + " bộ (" + ratio.toFixed(1) + "%)";
+                  const current = view[context.dataIndex] || {};
+                  return [
+                    " " + context.label + ": " + formatInt(value) + " bộ (" + ratio.toFixed(1) + "%)",
+                    " Hãng: " + (current.brand || "Chưa rõ"),
+                    " Công ty: " + (current.company || "Chưa rõ")
+                  ];
                 }
               }
             }
