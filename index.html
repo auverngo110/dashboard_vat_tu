@@ -715,6 +715,11 @@
         <input id="fileInput" type="file" accept=".csv,text/csv">
 
         <div class="filter-box">
+          <label for="presetDataSelect">Nguồn dữ liệu có sẵn</label>
+          <select id="presetDataSelect"></select>
+        </div>
+
+        <div class="filter-box">
           <label for="typeFilter">Phân loại</label>
           <select id="typeFilter"></select>
         </div>
@@ -838,13 +843,16 @@
     const ALL_TYPES_KEY = "__all__";
     const TOP_COUNT = 5;
     const BOTTOM_COUNT = 5;
+    const PRESET_FILES = ["Khớp.csv", "Stent.csv"];
+    const URL_PARAM_NAME = "url";
     const monthLabels = Array.from({ length: 12 }, (_, index) => "T" + (index + 1));
     const chartRefs = [];
 
     const state = {
       allProducts: [],
       selectedType: ALL_TYPES_KEY,
-      sourceLabel: "data.csv"
+      sourceLabel: PRESET_FILES[0],
+      selectedDataUrl: ""
     };
 
     const zoomState = {
@@ -1134,6 +1142,46 @@
       const node = document.getElementById("statusText");
       node.textContent = message;
       node.style.color = isError ? "#a0142f" : "#576175";
+    }
+
+    function readUrlSourceFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      const value = normalizeText(params.get(URL_PARAM_NAME));
+      return value || "";
+    }
+
+    function setUrlSourceQuery(sourceUrl) {
+      const params = new URLSearchParams(window.location.search);
+      const normalized = normalizeText(sourceUrl);
+
+      if (normalized) {
+        params.set(URL_PARAM_NAME, normalized);
+      } else {
+        params.delete(URL_PARAM_NAME);
+      }
+
+      const query = params.toString();
+      const nextUrl = window.location.pathname + (query ? "?" + query : "") + window.location.hash;
+      window.history.replaceState({}, "", nextUrl);
+    }
+
+    function populatePresetDataSelect() {
+      const select = document.getElementById("presetDataSelect");
+      const fromQuery = readUrlSourceFromQuery();
+
+      select.innerHTML = "";
+
+      PRESET_FILES.forEach(fileName => {
+        const option = document.createElement("option");
+        option.value = fileName;
+        option.textContent = fileName;
+        select.appendChild(option);
+      });
+
+      const initialValue = PRESET_FILES.includes(fromQuery) ? fromQuery : PRESET_FILES[0];
+      select.value = initialValue;
+      state.selectedDataUrl = initialValue;
+      setUrlSourceQuery(initialValue);
     }
 
     function destroyCharts() {
@@ -1761,10 +1809,10 @@
       );
     }
 
-    async function loadCsvFromCurrentFolder() {
-      const response = await fetch("data.csv", { cache: "no-store" });
+    async function loadCsvFromCurrentFolder(sourceUrl) {
+      const response = await fetch(sourceUrl, { cache: "no-store" });
       if (!response.ok) {
-        throw new Error("Không thể tải data.csv (HTTP " + response.status + ")");
+        throw new Error("Không thể tải " + sourceUrl + " (HTTP " + response.status + ")");
       }
       return response.text();
     }
@@ -1783,13 +1831,14 @@
 
     async function init() {
       try {
-        setStatus("Đang tải dữ liệu từ data.csv...", false);
-        const csvText = await loadCsvFromCurrentFolder();
-        await applyCsvText(csvText, "data.csv");
+        const sourceUrl = state.selectedDataUrl || PRESET_FILES[0];
+        setStatus("Đang tải dữ liệu từ " + sourceUrl + "...", false);
+        const csvText = await loadCsvFromCurrentFolder(sourceUrl);
+        await applyCsvText(csvText, sourceUrl);
       } catch (error) {
         console.error(error);
         setStatus(
-          "Không tự động đọc được data.csv. Hãy chọn CSV thủ công hoặc chạy python3 -m http.server.",
+          "Không tự động đọc được nguồn dữ liệu đã chọn. Hãy đổi nguồn hoặc chọn CSV thủ công.",
           true
         );
       }
@@ -1797,6 +1846,12 @@
 
     document.getElementById("reloadBtn").addEventListener("click", () => {
       init();
+    });
+
+    document.getElementById("presetDataSelect").addEventListener("change", async event => {
+      state.selectedDataUrl = event.target.value;
+      setUrlSourceQuery(state.selectedDataUrl);
+      await init();
     });
 
     document.getElementById("typeFilter").addEventListener("change", event => {
@@ -1813,6 +1868,8 @@
       try {
         setStatus("Đang đọc file " + file.name + " ...", false);
         const csvText = await file.text();
+        state.selectedDataUrl = "";
+        setUrlSourceQuery("");
         await applyCsvText(csvText, file.name);
       } catch (error) {
         console.error(error);
@@ -1821,6 +1878,7 @@
     });
 
     setupZoomButtons();
+    populatePresetDataSelect();
     init();
   </script>
 </body>
