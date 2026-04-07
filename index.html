@@ -843,7 +843,7 @@
     const ALL_TYPES_KEY = "__all__";
     const TOP_COUNT = 5;
     const BOTTOM_COUNT = 5;
-    const PRESET_FILES = ["Khớp.csv", "Stent.csv"];
+    const PRESET_FILES = ["Khớp.csv", "Stent.csv", "Stent-G1-2026.csv"];
     const URL_PARAM_NAME = "url";
     const monthLabels = Array.from({ length: 12 }, (_, index) => "T" + (index + 1));
     const chartRefs = [];
@@ -1003,6 +1003,26 @@
         console.warn("CSV parse warnings:", parsed.errors.slice(0, 5));
       }
 
+      const header = parsed.data[0] || [];
+      const headerNorm = header.map((h) => normalizeText(h).toLowerCase());
+      function colIndex(...names) {
+        for (const name of names) {
+          const target = normalizeText(name).toLowerCase();
+          const i = headerNorm.findIndex((h) => h === target);
+          if (i >= 0) {
+            return i;
+          }
+        }
+        return -1;
+      }
+      // Khớp.csv has an extra "% thầu 2025" column before SL thầu / 2025; Stent.csv does not.
+      const idxThang1 = colIndex("Tháng 1");
+      const monthBase = idxThang1 >= 0 ? idxThang1 : 13;
+      const idx2025Col = colIndex("2025");
+      const idx2025 = idx2025Col >= 0 ? idx2025Col : 11;
+      const idxTenderPct = colIndex("% thầu 2025");
+      const idxSlThau = colIndex("SL thầu");
+
       let currentSection = "Khác";
       const products = [];
 
@@ -1024,8 +1044,8 @@
           return;
         }
 
-        const monthly = Array.from({ length: 12 }, (_, monthIndex) => parseNumber(row[13 + monthIndex]));
-        const qty2025 = parseNumber(row[11]);
+        const monthly = Array.from({ length: 12 }, (_, monthIndex) => parseNumber(row[monthBase + monthIndex]));
+        const qty2025 = parseNumber(row[idx2025]);
         const monthlyTotal = sum(monthly);
         const yearQty = qty2025 > 0 ? qty2025 : monthlyTotal;
         const unitPrice = parseNumber(row[5]);
@@ -1042,8 +1062,8 @@
           company: normalizeText(row[6]) || "Chưa rõ",
           brand: normalizeText(row[7]) || "Chưa rõ",
           country: normalizeText(row[8]) || "Chưa rõ",
-          tenderPct: parseNumber(row[9]),
-          tenderQty: parseNumber(row[10]),
+          tenderPct: idxTenderPct >= 0 ? parseNumber(row[idxTenderPct]) : 0,
+          tenderQty: idxSlThau >= 0 ? parseNumber(row[idxSlThau]) : 0,
           qty2025,
           yearQty,
           yearValue: unitPrice * yearQty,
