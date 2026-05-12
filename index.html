@@ -843,7 +843,7 @@
     const ALL_TYPES_KEY = "__all__";
     const TOP_COUNT = 5;
     const BOTTOM_COUNT = 5;
-    const PRESET_FILES = ["Khớp.csv", "Stent.csv", "Khớp-Q1-2026.csv", "Stent-Q1-2026.csv"];
+    const PRESET_FILES = ["Khớp-Cả Năm-2025.csv", "Stent-Cả Năm-2025.csv", "Khớp-Q1-2026.csv", "Stent-Q1-2026.csv"];
     const URL_PARAM_NAME = "url";
     const monthLabels = Array.from({ length: 12 }, (_, index) => "T" + (index + 1));
     const chartRefs = [];
@@ -1015,7 +1015,7 @@
         }
         return -1;
       }
-      // Khớp.csv has an extra "% thầu 2025" column before SL thầu / 2025; Stent.csv does not.
+      // Khớp-Cả Năm-2025.csv has an extra "% thầu 2025" column before SL thầu / 2025; Stent-Cả Năm-2025.csv does not.
       const idxThang1 = colIndex("Tháng 1");
       const monthBase = idxThang1 >= 0 ? idxThang1 : 13;
       const idx2025Col = colIndex("2025");
