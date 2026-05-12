@@ -133,6 +133,45 @@
       font-weight: 700;
     }
 
+    .filter-row-sources {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 0.58rem;
+      align-items: end;
+      margin-left: auto;
+      min-width: 0;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+
+    .filter-row-sources .filter-box {
+      margin-left: 0;
+      min-width: 0;
+    }
+
+    .filter-row-sources .filter-box--year {
+      min-width: 4.75rem;
+      max-width: 7rem;
+      flex-shrink: 0;
+    }
+
+    .filter-row-sources .filter-box--quarter {
+      min-width: 6.25rem;
+      max-width: 9rem;
+      flex-shrink: 0;
+    }
+
+    .filter-row-sources .filter-box--preset {
+      flex: 1 1 12rem;
+      min-width: 0;
+      max-width: 22rem;
+    }
+
+    .filter-row-sources .filter-box--preset select {
+      width: 100%;
+      max-width: 100%;
+    }
+
     .filter-box select {
       min-height: 2.32rem;
       appearance: none;
@@ -714,9 +753,28 @@
         <label for="fileInput" class="file-label">Chọn dữ liệu thủ công</label>
         <input id="fileInput" type="file" accept=".csv,text/csv">
 
-        <div class="filter-box">
-          <label for="presetDataSelect">Nguồn dữ liệu có sẵn</label>
-          <select id="presetDataSelect"></select>
+        <div class="filter-row-sources">
+          <div class="filter-box filter-box--year">
+            <label for="presetYearSelect">Năm</label>
+            <select id="presetYearSelect"></select>
+          </div>
+
+          <div class="filter-box filter-box--quarter">
+            <label for="presetQuarterSelect">Quý</label>
+            <select id="presetQuarterSelect">
+              <option value="all">Tất cả</option>
+              <option value="year">Cả năm</option>
+              <option value="Q1">Quý 1</option>
+              <option value="Q2">Quý 2</option>
+              <option value="Q3">Quý 3</option>
+              <option value="Q4">Quý 4</option>
+            </select>
+          </div>
+
+          <div class="filter-box filter-box--preset">
+            <label for="presetDataSelect">Nguồn dữ liệu có sẵn</label>
+            <select id="presetDataSelect"></select>
+          </div>
         </div>
 
         <div class="filter-box">
@@ -843,7 +901,7 @@
     const ALL_TYPES_KEY = "__all__";
     const TOP_COUNT = 5;
     const BOTTOM_COUNT = 5;
-    const PRESET_FILES = ["Khớp-Cả Năm-2025.csv", "Stent-Cả Năm-2025.csv", "Khớp-Q1-2026.csv", "Stent-Q1-2026.csv"];
+    const ALL_PRESET_FILES = ["Khớp-Cả Năm-2025.csv", "Stent-Cả Năm-2025.csv", "Khớp-Q1-2026.csv", "Stent-Q1-2026.csv"];
     const URL_PARAM_NAME = "url";
     const monthLabels = Array.from({ length: 12 }, (_, index) => "T" + (index + 1));
     const chartRefs = [];
@@ -851,7 +909,7 @@
     const state = {
       allProducts: [],
       selectedType: ALL_TYPES_KEY,
-      sourceLabel: PRESET_FILES[0],
+      sourceLabel: ALL_PRESET_FILES[0],
       selectedDataUrl: ""
     };
 
@@ -1185,23 +1243,122 @@
       window.history.replaceState({}, "", nextUrl);
     }
 
+    function parsePresetFilename(fileName) {
+      const name = normalizeText(fileName);
+      const match = name.match(/^(.+)-(Cả Năm|Q[1-4])-(\d{4})\.csv$/);
+      if (!match) {
+        return null;
+      }
+      return { category: match[1], period: match[2], year: Number(match[3]) };
+    }
+
+    function getUniqueYearsFromPresets() {
+      const years = new Set();
+      for (const name of ALL_PRESET_FILES) {
+        const parsed = parsePresetFilename(name);
+        if (parsed) {
+          years.add(parsed.year);
+        }
+      }
+      return Array.from(years).sort((a, b) => b - a);
+    }
+
+    function populatePresetYearSelect() {
+      const yearSelect = document.getElementById("presetYearSelect");
+      const years = getUniqueYearsFromPresets();
+      yearSelect.innerHTML = "";
+
+      const allYearsOption = document.createElement("option");
+      allYearsOption.value = "all";
+      allYearsOption.textContent = "Tất cả";
+      yearSelect.appendChild(allYearsOption);
+
+      years.forEach(yearValue => {
+        const option = document.createElement("option");
+        option.value = String(yearValue);
+        option.textContent = String(yearValue);
+        yearSelect.appendChild(option);
+      });
+    }
+
+    function resetPresetYearQuarterToAll() {
+      const yearSelect = document.getElementById("presetYearSelect");
+      const quarterSelect = document.getElementById("presetQuarterSelect");
+      const years = getUniqueYearsFromPresets();
+
+      if (!years.length) {
+        return;
+      }
+
+      yearSelect.value = "all";
+      quarterSelect.value = "all";
+    }
+
+    function getFilteredPresetFiles() {
+      const yearSelect = document.getElementById("presetYearSelect");
+      const quarterSelect = document.getElementById("presetQuarterSelect");
+      const yearValue = yearSelect.value;
+      const quarterKey = quarterSelect.value;
+
+      return ALL_PRESET_FILES.filter(entry => {
+        const parsed = parsePresetFilename(entry);
+        if (!parsed) {
+          return false;
+        }
+        if (yearValue !== "all" && parsed.year !== Number(yearValue)) {
+          return false;
+        }
+        if (quarterKey === "all") {
+          return true;
+        }
+        if (quarterKey === "year") {
+          return parsed.period === "Cả Năm";
+        }
+        return parsed.period === quarterKey;
+      });
+    }
+
     function populatePresetDataSelect() {
       const select = document.getElementById("presetDataSelect");
       const fromQuery = readUrlSourceFromQuery();
+      const filtered = getFilteredPresetFiles();
 
       select.innerHTML = "";
 
-      PRESET_FILES.forEach(fileName => {
+      if (!filtered.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "(Không có file)";
+        option.disabled = true;
+        select.appendChild(option);
+        state.selectedDataUrl = "";
+        return;
+      }
+
+      filtered.forEach(fileName => {
         const option = document.createElement("option");
         option.value = fileName;
         option.textContent = fileName;
         select.appendChild(option);
       });
 
-      const initialValue = PRESET_FILES.includes(fromQuery) ? fromQuery : PRESET_FILES[0];
+      const initialValue = filtered.includes(fromQuery) ? fromQuery : filtered[0];
       select.value = initialValue;
       state.selectedDataUrl = initialValue;
       setUrlSourceQuery(initialValue);
+    }
+
+    async function syncPresetSourceAfterYearQuarterChange() {
+      const filtered = getFilteredPresetFiles();
+      if (!filtered.length) {
+        setStatus(
+          "Không có file CSV nào khớp năm và quý đã chọn. Hãy đổi bộ lọc hoặc bổ sung tên file trong ALL_PRESET_FILES.",
+          true
+        );
+        return;
+      }
+      populatePresetDataSelect();
+      await init();
     }
 
     function destroyCharts() {
@@ -1851,7 +2008,7 @@
 
     async function init() {
       try {
-        const sourceUrl = state.selectedDataUrl || PRESET_FILES[0];
+        const sourceUrl = state.selectedDataUrl || ALL_PRESET_FILES[0];
         setStatus("Đang tải dữ liệu từ " + sourceUrl + "...", false);
         const csvText = await loadCsvFromCurrentFolder(sourceUrl);
         await applyCsvText(csvText, sourceUrl);
@@ -1872,6 +2029,14 @@
       state.selectedDataUrl = event.target.value;
       setUrlSourceQuery(state.selectedDataUrl);
       await init();
+    });
+
+    document.getElementById("presetYearSelect").addEventListener("change", () => {
+      syncPresetSourceAfterYearQuarterChange();
+    });
+
+    document.getElementById("presetQuarterSelect").addEventListener("change", () => {
+      syncPresetSourceAfterYearQuarterChange();
     });
 
     document.getElementById("typeFilter").addEventListener("change", event => {
@@ -1898,6 +2063,8 @@
     });
 
     setupZoomButtons();
+    populatePresetYearSelect();
+    resetPresetYearQuarterToAll();
     populatePresetDataSelect();
     init();
   </script>
