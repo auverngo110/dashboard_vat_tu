@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard số lượng sử dụng nhóm vật tư thầu</title>
+  <link rel="icon" href="logo.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <nav class="app-nav" aria-label="Chọn dashboard">
+    <a href="index.html">Dashboard SD VT theo tháng</a>
+    <a href="kq-thau.html" class="is-active">Dashboard SD VT theo thầu</a>
+  </nav>
+
+  <main>
+    <section class="header">
+      <p class="eyebrow">Khoa Trang bị</p>
+      <h1>Dashboard số lượng sử dụng nhóm vật tư thầu</h1>
+      <p class="status" id="kqStatusText">Đang tải dữ liệu...</p>
+
+      <div class="actions">
+        <button id="kqReloadBtn" type="button">Tải lại dữ liệu</button>
+        <label for="kqFileInput" class="file-label">Chọn CSV thủ công</label>
+        <input id="kqFileInput" type="file" accept=".csv,text/csv">
+
+        <div class="filter-box filter-box--preset">
+          <label for="kqPresetSelect">Nguồn dữ liệu</label>
+          <select id="kqPresetSelect"></select>
+        </div>
+
+        <div class="filter-box">
+          <label for="kqNhomFilter">Nhóm vật tư</label>
+          <select id="kqNhomFilter"></select>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <article class="kpi-card">
+          <h2>VT không sử dụng / VT trúng thầu</h2>
+          <p id="kqKpiRows">0 / 0</p>
+        </article>
+        <article class="kpi-card">
+          <h2>Tổng SL thầu</h2>
+          <p id="kqKpiSlThau">0</p>
+        </article>
+        <article class="kpi-card">
+          <h2>Tổng thành tiền thầu</h2>
+          <p id="kqKpiTenderMoney">0</p>
+        </article>
+        <article class="kpi-card">
+          <h2>Tổng thành tiền sử dụng</h2>
+          <p id="kqKpiValue">0</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="charts">
+      <article class="chart-card">
+        <button class="chart-zoom-btn" type="button" data-target="kqChart1" data-kind="canvas" aria-label="Phóng to biểu đồ 1" title="Phóng to">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 3H3v5"></path>
+            <path d="M3 3l6 6"></path>
+            <path d="M16 21h5v-5"></path>
+            <path d="M21 21l-6-6"></path>
+          </svg>
+        </button>
+        <h3>1) Tương quan đơn giá – số lượng sử dụng – tổng tiền <span class="chart-h3-note">(kích thước bóng = tổng tiền)</span></h3>
+        <div class="chart-wrap"><canvas id="kqChart1"></canvas></div>
+        <p class="chart-brand-fullname" id="kqChart1Detail" aria-live="polite"></p>
+      </article>
+
+      <article class="chart-card">
+        <button class="chart-zoom-btn" type="button" data-target="kqChart2" data-kind="canvas" aria-label="Phóng to biểu đồ 2" title="Phóng to">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 3H3v5"></path>
+            <path d="M3 3l6 6"></path>
+            <path d="M16 21h5v-5"></path>
+            <path d="M21 21l-6-6"></path>
+          </svg>
+        </button>
+        <h3>2) Tương quan đơn giá và tổng thầu</h3>
+        <div class="chart-wrap"><canvas id="kqChart2"></canvas></div>
+        <p class="chart-brand-fullname" id="kqChart2Detail" aria-live="polite"></p>
+      </article>
+
+      <article class="chart-card">
+        <button class="chart-zoom-btn" type="button" data-target="kqChart3" data-kind="canvas" aria-label="Phóng to biểu đồ 3" title="Phóng to">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 3H3v5"></path>
+            <path d="M3 3l6 6"></path>
+            <path d="M16 21h5v-5"></path>
+            <path d="M21 21l-6-6"></path>
+          </svg>
+        </button>
+        <h3>3) Tương quan đơn giá và số lượng thầu</h3>
+        <div class="chart-wrap"><canvas id="kqChart3"></canvas></div>
+        <p class="chart-brand-fullname" id="kqChart3Detail" aria-live="polite"></p>
+      </article>
+
+      <article class="chart-card">
+        <button class="chart-zoom-btn" type="button" data-target="kqChart4" data-kind="canvas" aria-label="Phóng to biểu đồ 4" title="Phóng to">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 3H3v5"></path>
+            <path d="M3 3l6 6"></path>
+            <path d="M16 21h5v-5"></path>
+            <path d="M21 21l-6-6"></path>
+          </svg>
+        </button>
+        <h3>4) Tương quan số lượng thầu năm hiện tại và trước đó</h3>
+        <div class="chart-wrap"><canvas id="kqChart4"></canvas></div>
+        <p class="chart-brand-fullname" id="kqChart4Detail" aria-live="polite"></p>
+      </article>
+
+      <article class="chart-card">
+        <button class="chart-zoom-btn" type="button" data-target="kqChart5" data-kind="canvas" aria-label="Phóng to biểu đồ 5" title="Phóng to">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 3H3v5"></path>
+            <path d="M3 3l6 6"></path>
+            <path d="M16 21h5v-5"></path>
+            <path d="M21 21l-6-6"></path>
+          </svg>
+        </button>
+        <h3>5) Tổng số lượng và thành tiền sử dụng theo hãng</h3>
+        <div class="chart-wrap"><canvas id="kqChart5"></canvas></div>
+        <p class="chart-brand-fullname" id="kqChart5Detail" aria-live="polite"></p>
+      </article>
+
+      <article class="chart-card">
+        <button class="chart-zoom-btn" type="button" data-target="kqChart6" data-kind="canvas" aria-label="Phóng to biểu đồ 6" title="Phóng to">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M8 3H3v5"></path>
+            <path d="M3 3l6 6"></path>
+            <path d="M16 21h5v-5"></path>
+            <path d="M21 21l-6-6"></path>
+          </svg>
+        </button>
+        <h3>6) VTYTTH có thành tiền sử dụng cao nhất</h3>
+        <div class="chart-wrap chart-wrap--tall"><canvas id="kqChart6"></canvas></div>
+        <p class="chart-brand-fullname" id="kqChart6Detail" aria-live="polite"></p>
+      </article>
+    </section>
+  </main>
+
+  <div id="chartZoomModal" class="chart-zoom-modal" aria-hidden="true">
+    <div class="chart-zoom-backdrop" id="chartZoomBackdrop"></div>
+    <div class="chart-zoom-dialog" role="dialog" aria-modal="true" aria-labelledby="chartZoomTitle">
+      <div class="chart-zoom-head">
+        <h3 class="chart-zoom-title" id="chartZoomTitle">Phóng to biểu đồ</h3>
+        <button class="chart-zoom-close" id="chartZoomClose" type="button" aria-label="Đóng">x</button>
+      </div>
+      <div class="chart-zoom-body" id="chartZoomBody"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="kq-thau.js"></script>
+</body>
+</html>
