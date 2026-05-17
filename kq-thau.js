@@ -128,14 +128,6 @@ function compactAxisLabel(label, maxLength = 14) {
   return text.slice(0, maxLength - 1) + "...";
 }
 
-function isProductCode(value) {
-  const code = normalizeText(value).toUpperCase();
-  if (!code || /\s/.test(code)) {
-    return false;
-  }
-
-  return /^[A-Z][A-Z0-9._/-]*$/.test(code) && /\d/.test(code);
-}
 function presetBasename(filePath) {
   const name = normalizeText(filePath);
   const parts = name.split("/");
@@ -290,7 +282,7 @@ function parseKqCsv(csvText) {
 
   parsed.data.forEach(raw => {
     const code = normalizeText(kqRowField(raw, "Mã"));
-    if (!isProductCode(code)) {
+    if (!code) {
       return;
     }
 
