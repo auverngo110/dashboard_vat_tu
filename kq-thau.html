@@ -27,13 +27,20 @@
         <label for="kqFileInput" class="file-label">Chọn CSV thủ công</label>
         <input id="kqFileInput" type="file" accept=".csv,text/csv">
 
-        <div class="filter-box filter-box--preset">
-          <label for="kqPresetSelect">Nguồn dữ liệu</label>
-          <select id="kqPresetSelect"></select>
+        <div class="filter-row-sources">
+          <div class="filter-box filter-box--year">
+            <label for="kqYearFilter">Năm</label>
+            <select id="kqYearFilter"></select>
+          </div>
+
+          <div class="filter-box filter-box--preset">
+            <label for="kqSourceSelect">Nguồn dữ liệu có sẵn</label>
+            <select id="kqSourceSelect"></select>
+          </div>
         </div>
 
         <div class="filter-box">
-          <label for="kqNhomFilter">Nhóm vật tư</label>
+          <label for="kqNhomFilter">Phân loại nhóm vật tư</label>
           <select id="kqNhomFilter"></select>
         </div>
       </div>

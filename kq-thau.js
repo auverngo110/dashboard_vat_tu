@@ -1,5 +1,26 @@
 const ALL_TYPES_KEY = "__all__";
-const KQ_PRESET_FILES = ["data/kq-thau/KQ thầu 2-25.csv"];
+const ALL_YEARS_KEY = "__all_years__";
+/** Marker for bundled preset loads in internal state */
+const KQ_ALL_PRESETS_LABEL = "__all_presets__";
+
+/**
+ * Registry of CSV files to load together on startup/reload.
+ * Use the same `year` for multiple files when one year has several exports (add optional `label` to tell them apart in the dropdown).
+ *
+ * Example second file for 2025:
+ *   { path: "data/kq-thau/Other-2025.csv", year: 2025, label: "Bộ phụ trợ 2025" }
+ */
+const KQ_DATA_SOURCES = [
+  { path: "data/kq-thau/Dashboard - Stent-2021.csv", year: 2021, label: "Stent 2021" },
+  { path: "data/kq-thau/Dashboard - Khớp-2021.csv", year: 2021, label: "Khớp 2021" },
+  { path: "data/kq-thau/Dashboard - Stent-2022.csv", year: 2022, label: "Stent 2022" },
+  { path: "data/kq-thau/Dashboard - Khớp-2022.csv", year: 2022, label: "Khớp 2022" },
+  { path: "data/kq-thau/Dashboard - Stent-2023.csv", year: 2023, label: "Stent 2023" },
+  { path: "data/kq-thau/Dashboard - Khớp-2023.csv", year: 2023, label: "Khớp 2023" },
+  { path: "data/kq-thau/Dashboard - Stent-2024.csv", year: 2024, label: "Stent 2024" },
+  { path: "data/kq-thau/Dashboard - Stent-2025.csv", year: 2025, label: "Stent 2025" },
+  { path: "data/kq-thau/Dashboard - Khớp-2025.csv", year: 2025, label: "Khớp 2025" }
+];
 
 const zoomState = {
   chart: null
@@ -133,6 +154,56 @@ function presetBasename(filePath) {
   const parts = name.split("/");
   return parts[parts.length - 1] || name;
 }
+
+function inferKqYearFromSource(sourceLabel) {
+  const s = normalizeText(sourceLabel);
+  if (!s) {
+    return null;
+  }
+  const stentYear = s.match(/[Ss]tent\s*-\s*(\d{4})/);
+  if (stentYear) {
+    return Number(stentYear[1]);
+  }
+  const beforeExt = s.match(/(\d{4})\s*\.(?:csv|CSV)$/);
+  if (beforeExt) {
+    return Number(beforeExt[1]);
+  }
+  return null;
+}
+
+function kqSourceDisplayName(src, options) {
+  const shortYearScoped = options && options.yearScoped;
+  const base = presetBasename(src.path);
+  if (src.label) {
+    return src.label;
+  }
+  if (shortYearScoped) {
+    return base;
+  }
+  const sameYear = KQ_DATA_SOURCES.filter(s => s.year === src.year).length;
+  if (sameYear > 1) {
+    return base;
+  }
+  return base;
+}
+
+function kqPresetLabelForPath(path) {
+  const src = KQ_DATA_SOURCES.find(s => s.path === path);
+  if (src && src.label) {
+    return src.label;
+  }
+  return presetBasename(path);
+}
+
+function formatKqStatusSourceLabel(sourceLabel, selectedPath) {
+  if (sourceLabel === KQ_ALL_PRESETS_LABEL && selectedPath) {
+    return kqPresetLabelForPath(selectedPath);
+  }
+  if (sourceLabel === KQ_ALL_PRESETS_LABEL) {
+    return "Tất cả file (" + KQ_DATA_SOURCES.length + ")";
+  }
+  return presetBasename(sourceLabel);
+}
 function deepClonePreserveFunctions(value) {
   if (Array.isArray(value)) {
     return value.map(item => deepClonePreserveFunctions(item));
@@ -235,8 +306,11 @@ async function loadCsvFromCurrentFolder(sourceUrl) {
 const ktChartRefs = [];
 const kqState = {
   allRows: [],
+  /** "presets" = KQ_DATA_SOURCES; "manual" = CSV uploaded by user */
+  dataMode: "presets",
   selectedNhom: ALL_TYPES_KEY,
-  selectedDataUrl: "",
+  selectedYear: ALL_YEARS_KEY,
+  selectedSourcePath: KQ_DATA_SOURCES[0] ? KQ_DATA_SOURCES[0].path : "",
   sourceLabel: ""
 };
 
@@ -257,6 +331,13 @@ function setKqStatus(message, isError) {
   node.style.color = isError ? "#a0142f" : "#576175";
 }
 
+function setKqSourceSelectDisabled(disabled) {
+  const el = document.getElementById("kqSourceSelect");
+  if (el) {
+    el.disabled = disabled;
+  }
+}
+
 function kqRowField(row, ...names) {
   const want = names.map(nameValue => normalizeText(nameValue).toLowerCase());
   for (const key of Object.keys(row)) {
@@ -267,7 +348,21 @@ function kqRowField(row, ...names) {
   return "";
 }
 
-function parseKqCsv(csvText) {
+function parseKqCsv(csvText, sourceMeta) {
+  const path =
+    typeof sourceMeta === "string"
+      ? normalizeText(sourceMeta)
+      : normalizeText(sourceMeta.path);
+  let year =
+    typeof sourceMeta === "string"
+      ? inferKqYearFromSource(sourceMeta)
+      : sourceMeta.year != null
+        ? Number(sourceMeta.year)
+        : inferKqYearFromSource(path);
+  if (year != null && !Number.isFinite(year)) {
+    year = null;
+  }
+
   const parsed = Papa.parse(csvText, {
     header: true,
     skipEmptyLines: "greedy",
@@ -300,6 +395,8 @@ function parseKqCsv(csvText) {
 
     rows.push({
       code,
+      year,
+      sourcePath: path,
       nhom: normalizeText(kqRowField(raw, "Nhóm")) || "Khác",
       ten: normalizeText(kqRowField(raw, "Tên")) || code,
       donGia,
@@ -354,11 +451,64 @@ function populateKqNhomFilter(rows) {
   }
 }
 
-function getActiveKqRows() {
-  if (kqState.selectedNhom === ALL_TYPES_KEY) {
-    return kqState.allRows;
+function populateKqYearFilter(rows) {
+  const select = document.getElementById("kqYearFilter");
+  const previous = kqState.selectedYear;
+  const years = [
+    ...new Set(
+      rows.map(r => r.year).filter(y => y != null && Number.isFinite(Number(y)))
+    )
+  ].sort((a, b) => Number(b) - Number(a));
+
+  select.innerHTML = "";
+
+  const allOption = document.createElement("option");
+  allOption.value = ALL_YEARS_KEY;
+  allOption.textContent = years.length ? "Tất cả" : "Tất cả";
+  select.appendChild(allOption);
+
+  years.forEach(y => {
+    const option = document.createElement("option");
+    const yn = Number(y);
+    option.value = String(yn);
+    option.textContent = String(yn);
+    select.appendChild(option);
+  });
+
+  if (!years.length) {
+    select.disabled = true;
+    kqState.selectedYear = ALL_YEARS_KEY;
+    select.value = ALL_YEARS_KEY;
+    return;
   }
-  return kqState.allRows.filter(row => row.nhom === kqState.selectedNhom);
+
+  select.disabled = false;
+  const prevNum = previous !== ALL_YEARS_KEY ? Number(previous) : null;
+  if (prevNum != null && years.map(Number).includes(prevNum)) {
+    select.value = String(prevNum);
+    kqState.selectedYear = prevNum;
+  } else {
+    select.value = ALL_YEARS_KEY;
+    kqState.selectedYear = ALL_YEARS_KEY;
+  }
+}
+
+function getActiveKqRows() {
+  if (kqState.dataMode === "presets" && !kqState.selectedSourcePath) {
+    return [];
+  }
+  let rows = kqState.allRows;
+  if (kqState.selectedSourcePath) {
+    rows = rows.filter(row => row.sourcePath === kqState.selectedSourcePath);
+  }
+  if (kqState.selectedNhom !== ALL_TYPES_KEY) {
+    rows = rows.filter(row => row.nhom === kqState.selectedNhom);
+  }
+  if (kqState.selectedYear !== ALL_YEARS_KEY) {
+    const y = Number(kqState.selectedYear);
+    rows = rows.filter(row => row.year === y);
+  }
+  return rows;
 }
 
 function updateKqKpi(rows) {
@@ -963,49 +1113,91 @@ function renderKqDashboard() {
   kqRenderChart6(rows);
 
   const nhLabel = kqState.selectedNhom === ALL_TYPES_KEY ? "Tất cả nhóm" : compactAxisLabel(kqState.selectedNhom, 48);
+  const yearLabel =
+    kqState.selectedYear === ALL_YEARS_KEY
+      ? "Tất cả năm"
+      : "Năm " + String(kqState.selectedYear);
   setKqStatus(
-    "Nguồn: " + presetBasename(kqState.sourceLabel) + " | " + nhLabel + " | " + formatInt(rows.length) + " dòng.",
+    "Nguồn: " +
+      formatKqStatusSourceLabel(kqState.sourceLabel, kqState.selectedSourcePath) +
+      " | " +
+      yearLabel +
+      " | " +
+      nhLabel +
+      " | " +
+      formatInt(rows.length) +
+      " dòng.",
     false
   );
 }
 
-async function applyKqCsvText(csvText, sourceLabel) {
-  const rows = parseKqCsv(csvText);
+function applyKqPresetRows(rows) {
   if (!rows.length) {
     throw new Error("Không đọc được dòng dữ liệu KQ thầu (thiếu cột hoặc không có mã vật tư).");
   }
-
+  kqState.dataMode = "presets";
   kqState.allRows = rows;
-  kqState.sourceLabel = sourceLabel;
+  kqState.sourceLabel = KQ_ALL_PRESETS_LABEL;
+  setKqSourceSelectDisabled(false);
   populateKqNhomFilter(rows);
+  populateKqYearFilter(rows);
+  populateKqSourceSelect();
   renderKqDashboard();
 }
 
-function populateKqPresetSelect() {
-  const select = document.getElementById("kqPresetSelect");
+function applyKqParsedRows(rows, sourceLabel) {
+  if (!rows.length) {
+    throw new Error("Không đọc được dòng dữ liệu KQ thầu (thiếu cột hoặc không có mã vật tư).");
+  }
+  kqState.allRows = rows;
+  kqState.sourceLabel = sourceLabel;
+  populateKqNhomFilter(rows);
+  populateKqYearFilter(rows);
+  renderKqDashboard();
+}
+
+function populateKqSourceSelect() {
+  const select = document.getElementById("kqSourceSelect");
+  if (!select) {
+    return;
+  }
+  const previous = kqState.selectedSourcePath;
+  const y = kqState.selectedYear;
+  const sources =
+    y === ALL_YEARS_KEY
+      ? KQ_DATA_SOURCES.slice()
+      : KQ_DATA_SOURCES.filter(s => s.year === y);
+
   select.innerHTML = "";
 
-  KQ_PRESET_FILES.forEach(path => {
-    const option = document.createElement("option");
-    option.value = path;
-    option.textContent = presetBasename(path);
-    select.appendChild(option);
+  if (!sources.length) {
+    select.disabled = true;
+    kqState.selectedSourcePath = "";
+    return;
+  }
+
+  select.disabled = false;
+
+  sources.forEach(src => {
+    const opt = document.createElement("option");
+    opt.value = src.path;
+    opt.textContent = kqSourceDisplayName(src, { yearScoped: y !== ALL_YEARS_KEY });
+    opt.title = src.path;
+    select.appendChild(opt);
   });
 
-  const preferred = kqState.selectedDataUrl && KQ_PRESET_FILES.includes(kqState.selectedDataUrl)
-    ? kqState.selectedDataUrl
-    : KQ_PRESET_FILES[0];
-  select.value = preferred;
-  kqState.selectedDataUrl = preferred;
+  const paths = new Set(sources.map(s => s.path));
+  const nextPath = paths.has(previous) ? previous : sources[0].path;
+  select.value = nextPath;
+  kqState.selectedSourcePath = nextPath;
 }
 
 async function initKq() {
-  populateKqPresetSelect();
   try {
-    const sourceUrl = kqState.selectedDataUrl || KQ_PRESET_FILES[0];
-    setKqStatus("Đang tải " + presetBasename(sourceUrl) + "...", false);
-    const csvText = await loadCsvFromCurrentFolder(sourceUrl);
-    await applyKqCsvText(csvText, sourceUrl);
+    setKqStatus("Đang tải " + KQ_DATA_SOURCES.length + " file…", false);
+    const texts = await Promise.all(KQ_DATA_SOURCES.map(s => loadCsvFromCurrentFolder(s.path)));
+    const merged = texts.flatMap((csvText, i) => parseKqCsv(csvText, KQ_DATA_SOURCES[i]));
+    applyKqPresetRows(merged);
   } catch (error) {
     console.error(error);
     setKqStatus("Không đọc được dữ liệu KQ thầu: " + error.message, true);
@@ -1016,13 +1208,22 @@ document.getElementById("kqReloadBtn").addEventListener("click", () => {
   initKq();
 });
 
-document.getElementById("kqPresetSelect").addEventListener("change", async event => {
-  kqState.selectedDataUrl = event.target.value;
-  await initKq();
+document.getElementById("kqSourceSelect").addEventListener("change", event => {
+  kqState.selectedSourcePath = event.target.value;
+  renderKqDashboard();
 });
 
 document.getElementById("kqNhomFilter").addEventListener("change", event => {
   kqState.selectedNhom = event.target.value;
+  renderKqDashboard();
+});
+
+document.getElementById("kqYearFilter").addEventListener("change", event => {
+  const v = event.target.value;
+  kqState.selectedYear = v === ALL_YEARS_KEY ? ALL_YEARS_KEY : Number(v);
+  if (kqState.dataMode === "presets") {
+    populateKqSourceSelect();
+  }
   renderKqDashboard();
 });
 
@@ -1035,7 +1236,13 @@ document.getElementById("kqFileInput").addEventListener("change", async event =>
   try {
     setKqStatus("Đang đọc file " + file.name + " ...", false);
     const csvText = await file.text();
-    await applyKqCsvText(csvText, file.name);
+    kqState.dataMode = "manual";
+    kqState.selectedSourcePath = file.name;
+    setKqSourceSelectDisabled(true);
+    applyKqParsedRows(
+      parseKqCsv(csvText, { path: file.name, year: inferKqYearFromSource(file.name) }),
+      file.name
+    );
   } catch (error) {
     console.error(error);
     setKqStatus("Đọc file CSV thất bại: " + error.message, true);
